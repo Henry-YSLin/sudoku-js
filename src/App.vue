@@ -5,13 +5,14 @@
       <input type="checkbox" id="toggle" v-model="showInternal" />
       <label for="toggle">Show all possibilities</label>
       <button @click="solve()">Solve</button>
+      <button @click="generate()">Generate</button>
     </div>
   </div>
 </template>
 
 <script>
 import SudokuComp from "./components/Sudoku.vue";
-import { Sudoku, Position, Positions, Solver } from "./sudoku.js";
+import { Sudoku, Position, Positions, Solver, Generator } from "./sudoku.js";
 
 export default {
   name: "App",
@@ -80,6 +81,11 @@ export default {
       let solver = new Solver(this.gameObj);
       solver.solve();
     },
+    generate() {
+      let generator = new Generator(null);
+      generator.fillGrid();
+      this.gameObj = generator.maskGrid(60);
+    }
   },
 };
 </script>

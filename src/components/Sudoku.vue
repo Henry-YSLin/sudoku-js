@@ -1,6 +1,6 @@
 <template>
   <div>
-    <table border="1">
+    <table border="1" cellspacing="0">
       <tr v-for="row in gameObj.board" :key="row[0].id">
         <td v-for="item in row" :key="item.id" class="sudoku-cell">
           <SudokuCell :cellObj="item" :sudoku="gameObj" v-if="!showInternal"/>
@@ -47,5 +47,21 @@ a {
 .sudoku-cell {
   text-align: center;
   vertical-align: top;
+}
+td {
+  border:1px solid;
+  text-align:center;
+}
+td:first-child {
+  border-left:solid;
+}
+td:nth-child(3n) {
+  border-right:solid ;
+}
+tr:first-child td {
+  border-top:solid;
+}
+tr:nth-child(3n) td {
+  border-bottom:solid ;
 }
 </style>

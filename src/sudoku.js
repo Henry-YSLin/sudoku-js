@@ -1,3 +1,11 @@
+/**
+ * TODO:
+ * - Swordfish reducer
+ * - Reducer steps output
+ * - Generator
+ * - Toggleable reducers
+ */
+
 class Sudoku {
   #board;
 
@@ -19,6 +27,10 @@ class Sudoku {
     return this.#board;
   }
 
+  get boardFlat() {
+    return this.#board.map((x) => x.map((y) => y.number)).flat();
+  }
+
   static allNumbers() {
     return [1, 2, 3, 4, 5, 6, 7, 8, 9];
   }
@@ -35,14 +47,14 @@ class Sudoku {
         this.#board[i][j] = new Cell(i + "" + j);
         if (board) {
           let num = board[i * 9 + j];
-          if (num === 0) {
+          if (num === 0 || num === null) {
             this.#board[i][j].number = null;
           } else {
             this.#board[i][j].number = num;
             this.#board[i][j].fixed = true;
           }
         } else {
-          this.#board[i][j].number = Math.floor(Math.random() * 9 + 1);
+          this.#board[i][j].number = null;
         }
       }
     }
@@ -57,6 +69,12 @@ class Possibilities {
   get numbers() {
     let ret = [];
     for (let i = 1; i <= 9; i++) if (this[i]) ret.push(i);
+    return ret;
+  }
+
+  get length() {
+    let ret = 0;
+    for (let i = 1; i <= 9; i++) if (this[i]) ret++;
     return ret;
   }
 }
@@ -302,46 +320,78 @@ class Positions extends Array {
     return this;
   }
 
-  setNumber(number) {
+  setNumber(number, trackChanges) {
     this._assertHasSudoku();
+    let changed = false;
     if (number instanceof Function) {
-      this.forEachCell((cell, pos) => (cell.number = number(cell, pos)));
+      this.forEachCell((cell, pos) => {
+        let val = number(cell, pos);
+        if (cell.number !== val) {
+          cell.number = val;
+          changed = true;
+        }
+      });
     } else {
-      this.forEachCell((x) => (x.number = number));
+      this.forEachCell((x) => {
+        if (x.number !== number) {
+          x.number = number;
+          changed = true;
+        }
+      });
     }
+    if (trackChanges) trackChanges.changed = changed;
     return this;
   }
 
-  setPossibilities(number, isPossible) {
+  setPossibilities(number, isPossible, trackChanges) {
     this._assertHasSudoku();
+    let changed = false;
     if (number instanceof Array) {
       if (isPossible instanceof Function) {
         this.forEachCell((cell, pos) =>
-          number.forEach(
-            (num) => (cell.possibilities[num] = isPossible(cell, pos, num))
-          )
+          number.forEach((num) => {
+            let val = isPossible(cell, pos, num);
+            if (cell.possibilities[num] !== val) {
+              cell.possibilities[num] = val;
+              changed = true;
+            }
+          })
         );
       } else {
         this.forEachCell((x) =>
-          number.forEach((num) => (x.possibilities[num] = isPossible))
+          number.forEach((num) => {
+            if (x.possibilities[num] !== isPossible) {
+              x.possibilities[num] = isPossible;
+              changed = true;
+            }
+          })
         );
       }
     } else {
       if (isPossible instanceof Function) {
-        this.forEachCell(
-          (cell, pos) =>
-            (cell.possibilities[number] = isPossible(cell, pos, number))
-        );
+        this.forEachCell((cell, pos) => {
+          let val = isPossible(cell, pos, number);
+          if (cell.possibilities[number] !== val) {
+            cell.possibilities[number] = val;
+            changed = true;
+          }
+        });
       } else {
-        this.forEachCell((x) => (x.possibilities[number] = isPossible));
+        this.forEachCell((x) => {
+          if (x.possibilities[number] !== isPossible) {
+            x.possibilities[number] = isPossible;
+            changed = true;
+          }
+        });
       }
     }
+    if (trackChanges) trackChanges.changed = changed;
     return this;
   }
 
   countPossibilities(count) {
     this._assertHasSudoku();
-    return this.filterCells((x) => x.possibilities.numbers.length === count);
+    return this.filterCells((x) => x.possibilities.length === count);
   }
 
   isInSameRow() {
@@ -410,6 +460,19 @@ class Positions extends Array {
   }
 }
 
+class ChangeTracker {
+  #changed;
+  constructor() {
+    this.#changed = false;
+  }
+  set changed(val) {
+    this.#changed ||= val;
+  }
+  get changed() {
+    return this.#changed;
+  }
+}
+
 class Solver {
   constructor(sudoku) {
     this.sudoku = sudoku;
@@ -417,25 +480,34 @@ class Solver {
 
   // if a cell is filled, there are no other possibilities
   filledCellsReducer() {
+    let changed = false;
     Positions.of(this.sudoku)
       .containsNumber()
+      .filterCells((x) => x.possibilities.length > 1)
       .setPossibilities(Sudoku.allNumbers(), false)
-      .forEachCell((x) => (x.possibilities[x.number] = true));
+      .forEachCell((x) => {
+        x.possibilities[x.number] = true;
+        changed = true;
+      });
+    return changed;
   }
 
   // remove possibilities from cells seen by a number
   seenNumbersReducer() {
+    let tracker = new ChangeTracker();
     for (let i = 1; i <= 9; i++) {
       // for each number
       let numberedCells = Positions.of(this.sudoku).containsNumber(i);
       Positions.of(this.sudoku)
         .seenBy(numberedCells)
-        .setPossibilities(i, false);
+        .setPossibilities(i, false, tracker);
     }
+    return tracker.changed;
   }
 
   // remove all other possibilities from cells when they form a pair
   pairReducer() {
+    let changed = false;
     for (let i = 1; i <= 9; i++) {
       // for each box
       if (
@@ -451,7 +523,7 @@ class Solver {
           .of(this.sudoku)
           .empty()
           .containsPossibilities(j);
-        if (choices.length === 2) {
+        if (choices.length === 2 && choices.countPossibilities(2).length < 2) {
           cornerMarks.push({ num: j, pos: choices });
         }
       }
@@ -465,15 +537,17 @@ class Solver {
               ),
               false
             );
+            changed = true;
           }
         }
       }
     }
+    return changed;
   }
 
   // remove all other possibilities from cells when they form a triple
   tripleReducer() {
-    // TODO: debug
+    let tracker = new ChangeTracker();
     for (let i = 1; i <= 9; i++) {
       // for each box
       if (
@@ -510,18 +584,30 @@ class Solver {
                       cornerMarks[l].num,
                     ].includes(x)
                 ),
-                false
+                false,
+                tracker
               );
+              Positions.of(this.sudoku)
+                .seenBy(union[0])
+                .seenBy(union[1])
+                .seenBy(union[2])
+                .setPossibilities(
+                  [cornerMarks[j].num, cornerMarks[k].num, cornerMarks[l].num],
+                  false,
+                  tracker
+                );
             }
           }
         }
       }
     }
+    return tracker.changed;
   }
 
   // remove possibilities from rows and columns
   // when a number is sure to be in a particular box
   cornerMarkReducer() {
+    let tracker = new ChangeTracker();
     for (let i = 1; i <= 9; i++) {
       // for each box
       for (let j = 1; j <= 9; j++) {
@@ -537,22 +623,25 @@ class Solver {
           .empty()
           .containsPossibilities(j);
         if (choices.length === 0) continue;
-        if (choices.isInSameRow())
+        if (choices.isInSameRow()) {
           Positions.row(choices[0].row)
             .of(this.sudoku)
             .exclude(Positions.box(i))
-            .setPossibilities(j, false);
+            .setPossibilities(j, false, tracker);
+        }
         if (choices.isInSameColumn())
           Positions.column(choices[0].column)
             .of(this.sudoku)
             .exclude(Positions.box(i))
-            .setPossibilities(j, false);
+            .setPossibilities(j, false, tracker);
       }
     }
+    return tracker.changed;
   }
 
   // remove possibilities with X Wing logic on rows
   rowXWingReducer() {
+    let tracker = new ChangeTracker();
     for (let i = 1; i <= 9; i++) {
       // for each number
       for (let j = 1; j <= 9; j++) {
@@ -591,20 +680,22 @@ class Solver {
               .of(this.sudoku)
               .exclude(row1)
               .exclude(row2)
-              .setPossibilities(i, false);
+              .setPossibilities(i, false, tracker);
             Positions.column(row1[1].column)
               .of(this.sudoku)
               .exclude(row1)
               .exclude(row2)
-              .setPossibilities(i, false);
+              .setPossibilities(i, false, tracker);
           }
         }
       }
     }
+    return tracker.changed;
   }
 
   // remove possibilities with X Wing logic on columns
   columnXWingReducer() {
+    let tracker = new ChangeTracker();
     for (let i = 1; i <= 9; i++) {
       // for each number
       for (let j = 1; j <= 9; j++) {
@@ -643,55 +734,47 @@ class Solver {
               .of(this.sudoku)
               .exclude(column1)
               .exclude(column2)
-              .setPossibilities(i, false);
+              .setPossibilities(i, false, tracker);
             Positions.row(column1[1].row)
               .of(this.sudoku)
               .exclude(column1)
               .exclude(column2)
-              .setPossibilities(i, false);
+              .setPossibilities(i, false, tracker);
           }
         }
       }
     }
+    return tracker.changed;
   }
 
-  // TODO: swordfish
   #possibilitiesReducer = [
     this.filledCellsReducer,
     this.seenNumbersReducer,
+    this.cornerMarkReducer,
     this.pairReducer,
     this.tripleReducer,
-    this.cornerMarkReducer,
     this.rowXWingReducer,
     this.columnXWingReducer,
   ];
 
-  updatePossibilities() {
-    this.#possibilitiesReducer.forEach((x) => x.call(this));
-  }
-
   singlePossibility() {
-    let changed = false;
+    let tracker = new ChangeTracker();
     Positions.of(this.sudoku)
       .empty()
       .countPossibilities(1)
-      .setNumber((x) => {
-        changed = true;
-        return x.possibilities.numbers[0];
-      });
-    return changed;
+      .setNumber((x) => x.possibilities.numbers[0], tracker);
+    return tracker.changed;
   }
 
   singleLocationChoice() {
-    let changed = false;
+    let tracker = new ChangeTracker();
     for (let i = 1; i <= 9; i++) {
       for (let j = 1; j <= 9; j++) {
         let setNum = (choices) => {
           if (choices.containsNumber(j).length === 0) {
             choices = choices.containsPossibilities(j);
             if (choices.length === 1) {
-              choices.setNumber(j);
-              changed = true;
+              choices.setNumber(j, tracker);
             }
           }
         };
@@ -700,7 +783,7 @@ class Solver {
         setNum(Positions.of(this.sudoku).box(i));
       }
     }
-    return changed;
+    return tracker.changed;
   }
 
   #numberFiller = [this.singlePossibility, this.singleLocationChoice];
@@ -714,12 +797,80 @@ class Solver {
 
   solve() {
     let steps = 0;
+    let changed = false;
     do {
-      this.updatePossibilities();
+      changed = false;
+      for (let i = 0; i < this.#possibilitiesReducer.length; i++) {
+        if (this.#possibilitiesReducer[i].call(this)) {
+          changed = true;
+          break;
+        }
+      }
+      changed = this.fillNumbers() || changed;
       steps++;
-    } while (this.fillNumbers());
+    } while (changed);
     console.log("Steps used: " + steps);
   }
 }
 
-export { Sudoku, Cell, Position, Positions, Solver };
+class Generator {
+  constructor(solver) {
+    this.solver = solver;
+    this.sudoku = new Sudoku();
+  }
+
+  fillGrid() {
+    let positions = Positions.all();
+    let c = 0;
+    do {
+      let currentCell = positions[c].of(this.sudoku);
+      if (currentCell.possibilities.length !== 0) {
+        let choices = currentCell.possibilities.numbers;
+        currentCell.number =
+          choices[Math.floor(Math.random() * choices.length)];
+        currentCell.possibilities[currentCell.number] = false;
+        if (
+          Positions.seenBy(positions[c])
+            .of(this.sudoku)
+            .containsNumber(currentCell.number).length === 0
+        ) {
+          c++;
+        }
+      } else {
+        currentCell.possibilities = new Possibilities();
+        currentCell.number = null;
+        c--;
+      }
+    } while (c < 81);
+    Positions.of(this.sudoku).setPossibilities(Sudoku.allNumbers(), true);
+    Positions.of(this.sudoku).forEachCell((x) => (x.fixed = true));
+    return this.sudoku;
+  }
+
+  maskGrid(count) {
+    let c = 0;
+    let choices = null;
+    let choice = null;
+    let tmp = null;
+    outer: do {
+      choices = Positions.of(this.sudoku).containsNumber();
+      do {
+        if (choices.length === 0) break outer;
+        console.log(this.sudoku.boardFlat);
+        tmp = new Sudoku(this.sudoku.boardFlat);
+        choice = choices[Math.floor(Math.random() * choices.length)];
+        choices.splice(choices.indexOf(choice), 1);
+        tmp.at(choice).number = null;
+        let solver = new Solver(tmp);
+        solver.solve();
+      } while (tmp.at(choice).number !== this.sudoku.at(choice).number);
+      this.sudoku.at(choice).number = null;
+      c++;
+      console.log(`${c}/${count}`);
+    } while (c < count);
+    Positions.of(this.sudoku).forEachCell((x) => (x.fixed = x.number !== null));
+    return this.sudoku;
+  }
+}
+
+export { Sudoku, Cell, Position, Positions, Solver, Generator };
