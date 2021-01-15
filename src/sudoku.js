@@ -117,6 +117,10 @@ class Position {
   equals(obj) {
     return this.row === obj.row && this.column === obj.column;
   }
+
+  toString() {
+    return "Position(" + this.column + "," + this.row + ")";
+  }
 }
 
 class Positions extends Array {
@@ -378,6 +382,19 @@ class Positions extends Array {
     }
   }
 
+  and(positions) {
+    let res = this.concat(positions);
+    var newArray = new Positions();
+    label: for (var i = 0; i < res.length; i++) {
+      for (var j = 0; j < newArray.length; j++) {
+        if (newArray[j].equals(res[i])) continue label;
+      }
+      newArray.push(res[i]);
+    }
+    newArray.sudoku = this.sudoku;
+    return newArray;
+  }
+
   equals(positions) {
     if (this === positions) return true;
     if (positions == null) return false;
@@ -398,14 +415,16 @@ class Solver {
     this.sudoku = sudoku;
   }
 
-  updatePossibilities() {
-    // if a cell is filled, there are no other possibilities
+  // if a cell is filled, there are no other possibilities
+  filledCellsReducer() {
     Positions.of(this.sudoku)
       .containsNumber()
       .setPossibilities(Sudoku.allNumbers(), false)
       .forEachCell((x) => (x.possibilities[x.number] = true));
+  }
 
-    // remove possibilities from cells seen by a number
+  // remove possibilities from cells seen by a number
+  seenNumbersReducer() {
     for (let i = 1; i <= 9; i++) {
       // for each number
       let numberedCells = Positions.of(this.sudoku).containsNumber(i);
@@ -413,8 +432,10 @@ class Solver {
         .seenBy(numberedCells)
         .setPossibilities(i, false);
     }
+  }
 
-    // remove all other possibilities from cells when they form a pair
+  // remove all other possibilities from cells when they form a pair
+  pairReducer() {
     for (let i = 1; i <= 9; i++) {
       // for each box
       if (
@@ -438,16 +459,69 @@ class Solver {
       for (let j = 0; j < cornerMarks.length; j++) {
         for (let k = j + 1; k < cornerMarks.length; k++) {
           if (cornerMarks[j].pos.equals(cornerMarks[k].pos)) {
-            cornerMarks[j].pos
-              .setPossibilities(Sudoku.allNumbers(), false)
-              .setPossibilities([cornerMarks[j].num, cornerMarks[k].num], true);
+            cornerMarks[j].pos.setPossibilities(
+              Sudoku.allNumbers().filter(
+                (x) => ![cornerMarks[j].num, cornerMarks[k].num].includes(x)
+              ),
+              false
+            );
           }
         }
       }
     }
+  }
 
-    // remove possibilities from rows and columns
-    // when a number is sure to be in a particular box
+  // remove all other possibilities from cells when they form a triple
+  tripleReducer() {
+    // TODO: debug
+    for (let i = 1; i <= 9; i++) {
+      // for each box
+      if (
+        Positions.box(i)
+          .of(this.sudoku)
+          .containsNumber().length === 9
+      )
+        continue;
+      let cornerMarks = [];
+      for (let j = 1; j <= 9; j++) {
+        // for each number
+        let choices = Positions.box(i)
+          .of(this.sudoku)
+          .empty()
+          .containsPossibilities(j);
+        if (choices.length >= 2 && choices.length <= 3) {
+          cornerMarks.push({ num: j, pos: choices });
+        }
+      }
+      if (cornerMarks.length < 3) continue;
+      for (let j = 0; j < cornerMarks.length; j++) {
+        for (let k = j + 1; k < cornerMarks.length; k++) {
+          for (let l = k + 1; l < cornerMarks.length; l++) {
+            let union = cornerMarks[j].pos
+              .and(cornerMarks[k].pos)
+              .and(cornerMarks[l].pos);
+            if (union.length === 3) {
+              union.setPossibilities(
+                Sudoku.allNumbers().filter(
+                  (x) =>
+                    ![
+                      cornerMarks[j].num,
+                      cornerMarks[k].num,
+                      cornerMarks[l].num,
+                    ].includes(x)
+                ),
+                false
+              );
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // remove possibilities from rows and columns
+  // when a number is sure to be in a particular box
+  cornerMarkReducer() {
     for (let i = 1; i <= 9; i++) {
       // for each box
       for (let j = 1; j <= 9; j++) {
@@ -475,12 +549,14 @@ class Solver {
             .setPossibilities(j, false);
       }
     }
+  }
 
-    // remove possibilities with X Wing logic
+  // remove possibilities with X Wing logic on rows
+  rowXWingReducer() {
     for (let i = 1; i <= 9; i++) {
       // for each number
       for (let j = 1; j <= 9; j++) {
-        // for each row/column
+        // for each row
         if (
           Positions.row(j)
             .of(this.sudoku)
@@ -493,7 +569,7 @@ class Solver {
           .containsPossibilities(i);
         if (row1.length !== 2) continue;
         for (let k = j + 1; k <= 9; k++) {
-          // for each remaining row/column
+          // for each remaining row
           if (
             Positions.row(k)
               .of(this.sudoku)
@@ -511,19 +587,90 @@ class Solver {
             (row1[0].column === row2[1].column &&
               row1[1].column === row2[0].column)
           ) {
-            Positions.column(row1[0].column).of(this.sudoku).setPossibilities(i, false);
-            Positions.column(row1[1].column).of(this.sudoku).setPossibilities(i, false);
-            this.sudoku.at(row1[0]).possibilities[i] = true;
-            this.sudoku.at(row1[1]).possibilities[i] = true;
-            this.sudoku.at(row2[0]).possibilities[i] = true;
-            this.sudoku.at(row2[1]).possibilities[i] = true;
+            Positions.column(row1[0].column)
+              .of(this.sudoku)
+              .exclude(row1)
+              .exclude(row2)
+              .setPossibilities(i, false);
+            Positions.column(row1[1].column)
+              .of(this.sudoku)
+              .exclude(row1)
+              .exclude(row2)
+              .setPossibilities(i, false);
           }
         }
       }
     }
   }
 
-  onlyOnePossibility() {
+  // remove possibilities with X Wing logic on columns
+  columnXWingReducer() {
+    for (let i = 1; i <= 9; i++) {
+      // for each number
+      for (let j = 1; j <= 9; j++) {
+        // for each column
+        if (
+          Positions.column(j)
+            .of(this.sudoku)
+            .containsNumber(i).length > 0
+        )
+          continue;
+        let column1 = Positions.column(j)
+          .of(this.sudoku)
+          .empty()
+          .containsPossibilities(i);
+        if (column1.length !== 2) continue;
+        for (let k = j + 1; k <= 9; k++) {
+          // for each remaining column
+          if (
+            Positions.column(k)
+              .of(this.sudoku)
+              .containsNumber(i).length > 0
+          )
+            continue;
+          let column2 = Positions.column(k)
+            .of(this.sudoku)
+            .empty()
+            .containsPossibilities(i);
+          if (column2.length !== 2) continue;
+          if (
+            (column1[0].row === column2[0].row &&
+              column1[1].row === column2[1].row) ||
+            (column1[0].row === column2[1].row &&
+              column1[1].row === column2[0].row)
+          ) {
+            Positions.row(column1[0].row)
+              .of(this.sudoku)
+              .exclude(column1)
+              .exclude(column2)
+              .setPossibilities(i, false);
+            Positions.row(column1[1].row)
+              .of(this.sudoku)
+              .exclude(column1)
+              .exclude(column2)
+              .setPossibilities(i, false);
+          }
+        }
+      }
+    }
+  }
+
+  // TODO: swordfish
+  #possibilitiesReducer = [
+    this.filledCellsReducer,
+    this.seenNumbersReducer,
+    this.pairReducer,
+    this.tripleReducer,
+    this.cornerMarkReducer,
+    this.rowXWingReducer,
+    this.columnXWingReducer,
+  ];
+
+  updatePossibilities() {
+    this.#possibilitiesReducer.forEach((x) => x.call(this));
+  }
+
+  singlePossibility() {
     let changed = false;
     Positions.of(this.sudoku)
       .empty()
@@ -535,7 +682,7 @@ class Solver {
     return changed;
   }
 
-  onlyOnePlaceForNumber() {
+  singleLocationChoice() {
     let changed = false;
     for (let i = 1; i <= 9; i++) {
       for (let j = 1; j <= 9; j++) {
@@ -556,12 +703,21 @@ class Solver {
     return changed;
   }
 
+  #numberFiller = [this.singlePossibility, this.singleLocationChoice];
+
+  fillNumbers() {
+    return this.#numberFiller.reduce(
+      (sum, x) => (sum = x.call(this) || sum),
+      false
+    );
+  }
+
   solve() {
     let steps = 0;
     do {
       this.updatePossibilities();
       steps++;
-    } while (this.onlyOnePossibility() || this.onlyOnePlaceForNumber());
+    } while (this.fillNumbers());
     console.log("Steps used: " + steps);
   }
 }
