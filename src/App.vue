@@ -7,6 +7,13 @@
       <button @click="solve()">Solve</button>
       <button @click="generate()">Generate</button>
     </div>
+    <h4>Todo:</h4>
+    <ul>
+      <li>Toggle analyzers on or off</li>
+      <li>Step-by-step solving</li>
+      <li>Edit UI</li>
+      <li>More analyzers (e.g. swordfish, quadruples)</li>
+    </ul>
   </div>
 </template>
 
@@ -48,16 +55,88 @@ export default {
     //   0,0,0,0,0,0,0,0,9,
     //   8,0,5,9,0,7,0,4,0,
     // ]);
-     this.gameObj = new Sudoku([
-      6,0,9,1,0,2,0,8,0,
-      0,0,0,0,0,0,4,0,0,
-      5,0,2,0,0,0,0,0,0,
-      0,0,0,0,2,0,3,0,4,
-      1,0,0,0,0,5,0,0,0,
-      0,2,0,0,0,0,5,0,6,
-      0,0,0,8,0,1,0,0,0,
-      0,0,0,0,0,0,0,0,9,
-      8,0,5,9,0,7,0,4,0,
+    this.gameObj = new Sudoku([
+      6,
+      0,
+      9,
+      1,
+      0,
+      2,
+      0,
+      8,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      4,
+      0,
+      0,
+      5,
+      0,
+      2,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      2,
+      0,
+      3,
+      0,
+      4,
+      1,
+      0,
+      0,
+      0,
+      0,
+      5,
+      0,
+      0,
+      0,
+      0,
+      2,
+      0,
+      0,
+      0,
+      0,
+      5,
+      0,
+      6,
+      0,
+      0,
+      0,
+      8,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      9,
+      8,
+      0,
+      5,
+      9,
+      0,
+      7,
+      0,
+      4,
+      0,
     ]);
 
     // library tests
@@ -85,7 +164,7 @@ export default {
       let generator = new Generator(null);
       generator.fillGrid();
       this.gameObj = generator.maskGrid(60);
-    }
+    },
   },
 };
 </script>
@@ -95,7 +174,7 @@ export default {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  text-align: center;
+  text-align: left;
   color: #2c3e50;
   margin-top: 60px;
 }
