@@ -3,8 +3,8 @@
     <table border="1" cellspacing="0">
       <tr v-for="row in gameObj.board" :key="row[0].id">
         <td v-for="item in row" :key="item.id" class="sudoku-cell">
-          <SudokuCell :cellObj="item" :sudoku="gameObj" v-if="!showInternal"/>
-          <InternalSudokuCell :cellObj="item" v-if="showInternal"/>
+          <sudoku-cell :cellObj="item" :sudoku="gameObj" v-if="!showInternal"/>
+          <internal-sudoku-cell :cellObj="item" v-if="showInternal"/>
         </td>
       </tr>
     </table>

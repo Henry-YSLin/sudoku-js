@@ -1,17 +1,24 @@
 <template>
   <div id="app">
-    <SudokuComp :gameObj="gameObj" :showInternal="showInternal" />
+    <b-container>
+      <b-row>
+        <b-col><sudoku-comp :gameObj="gameObj" :showInternal="showInternal" /></b-col>
+        <b-col><control-panel></control-panel></b-col>
+      </b-row>
+    </b-container>
+
     <div id="internal-checkbox">
       <input type="checkbox" id="toggle" v-model="showInternal" />
       <label for="toggle">Show all possibilities</label>
-      <button @click="solve()">Solve</button>
-      <button @click="generate()">Generate</button>
+      <b-button @click="solve()">Solve</b-button>
+      <b-button @click="generate()">Generate</b-button>
     </div>
     <h4>Todo:</h4>
     <ul>
       <li>Toggle analyzers on or off</li>
       <li>Step-by-step solving</li>
       <li>Edit UI</li>
+      <li>Difficulty analysis</li>
       <li>More analyzers (e.g. swordfish, quadruples)</li>
     </ul>
   </div>
@@ -19,12 +26,14 @@
 
 <script>
 import SudokuComp from "./components/Sudoku.vue";
+import ControlPanel from "./layouts/ControlPanel.vue";
 import { Sudoku, Position, Positions, Solver, Generator } from "./sudoku.js";
 
 export default {
   name: "App",
   components: {
     SudokuComp,
+    ControlPanel
   },
   data() {
     return {
