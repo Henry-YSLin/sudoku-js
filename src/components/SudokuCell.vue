@@ -26,7 +26,7 @@
 </template>
 
 <script>
-import { Positions } from "../sudoku.js";
+import { Positions } from "../sudoku/sudoku.js";
 
 export default {
   name: "SudokuCell",
@@ -39,8 +39,14 @@ export default {
       let pos = this.sudoku.positionOf(this.cellObj);
       return this.cellObj.possibilities.numbers.filter(
         (x) =>
-          Positions.box(pos.box).of(this.sudoku).containsPossibilities(x)
-            .length === 2
+          Positions.box(pos.box)
+            .of(this.sudoku)
+            .filterCells(
+              (y) =>
+                y.possibilities[x] &&
+                y.number === null &&
+                y.possibilities.numbers.length < 9
+            ).length === 2
       );
     },
   },

@@ -10,7 +10,7 @@ const router = new VueRouter({
       name: 'home',
       component: () => import('@/pages/Home.vue'),
       meta: {
-        pageTitle: 'Home',
+        pageTitle: 'Get a Sudoku',
         confirmAction: false,
         backAction: false
       },
@@ -31,6 +31,16 @@ const router = new VueRouter({
       component: () => import('@/pages/Generate.vue'),
       meta: {
         pageTitle: 'Generate',
+        confirmAction: true,
+        backAction: true
+      },
+    },
+    {
+      path: '/load',
+      name: 'load',
+      component: () => import('@/pages/Load.vue'),
+      meta: {
+        pageTitle: 'Load',
         confirmAction: true,
         backAction: true
       },

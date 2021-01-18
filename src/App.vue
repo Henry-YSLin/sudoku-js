@@ -1,43 +1,31 @@
 <template>
   <div id="app">
-    <b-container>
-      <b-row>
-        <b-col><sudoku-comp :gameObj="gameObj" :showInternal="showInternal" /></b-col>
-        <b-col><control-panel></control-panel></b-col>
+    <b-container class="h-100">
+      <b-row align-v="center">
+        <b-col cols="auto" xl="6"
+          ><sudoku-board :gameObj="store.sudoku" :showInternal="showInternal"
+        /></b-col>
+        <b-col cols="12" md="6"><control-panel></control-panel></b-col>
       </b-row>
     </b-container>
-
-    <div id="internal-checkbox">
-      <input type="checkbox" id="toggle" v-model="showInternal" />
-      <label for="toggle">Show all possibilities</label>
-      <b-button @click="solve()">Solve</b-button>
-      <b-button @click="generate()">Generate</b-button>
-    </div>
-    <h4>Todo:</h4>
-    <ul>
-      <li>Toggle analyzers on or off</li>
-      <li>Step-by-step solving</li>
-      <li>Edit UI</li>
-      <li>Difficulty analysis</li>
-      <li>More analyzers (e.g. swordfish, quadruples)</li>
-    </ul>
   </div>
 </template>
 
 <script>
-import SudokuComp from "./components/Sudoku.vue";
+import SudokuBoard from "./components/SudokuBoard.vue";
 import ControlPanel from "./layouts/ControlPanel.vue";
-import { Sudoku, Position, Positions, Solver, Generator } from "./sudoku.js";
+import store from "./store.js";
+import { Sudoku } from "./sudoku/sudoku.js";
 
 export default {
   name: "App",
   components: {
-    SudokuComp,
-    ControlPanel
+    SudokuBoard,
+    ControlPanel,
   },
   data() {
     return {
-      gameObj: null,
+      store,
       showInternal: false,
     };
   },
@@ -64,7 +52,7 @@ export default {
     //   0,0,0,0,0,0,0,0,9,
     //   8,0,5,9,0,7,0,4,0,
     // ]);
-    this.gameObj = new Sudoku([
+    this.store.sudoku = new Sudoku([
       6,
       0,
       9,
@@ -147,33 +135,6 @@ export default {
       4,
       0,
     ]);
-
-    // library tests
-    console.log(new Positions());
-    console.table(Positions.all());
-    console.log(
-      Positions.all().seenBy(new Position(1, 9)).column(2).of(this.gameObj)
-    );
-    console.log(
-      Positions.all()
-        .seenBy(new Position(1, 2))
-        .box(4)
-        .of(this.gameObj)
-        .containsNumber(5, 6, 7, 8, 9)
-    );
-    console.log(Positions.all().exclude(Positions.all()));
-    console.log(Positions.all().exclude(Positions.seenBy(new Position(1, 2))));
-  },
-  methods: {
-    solve() {
-      let solver = new Solver(this.gameObj);
-      solver.solve();
-    },
-    generate() {
-      let generator = new Generator(null);
-      generator.fillGrid();
-      this.gameObj = generator.maskGrid(60);
-    },
   },
 };
 </script>
@@ -186,10 +147,5 @@ export default {
   text-align: left;
   color: #2c3e50;
   margin-top: 60px;
-}
-#internal-checkbox {
-  position: absolute;
-  left: 0px;
-  width: auto;
 }
 </style>
