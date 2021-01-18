@@ -38,11 +38,15 @@
         ></b-form-input>
       </b-form-group>
 
-      <b-button type="submit" variant="primary" @click="generate()"
-        >Generate</b-button
+      <b-button
+        type="submit"
+        :variant="isLoading ? 'danger' : 'primary'"
+        @click="generate()"
+        >{{ isLoading ? "Cancel" : "Generate" }}</b-button
       >
     </b-form>
     <b-progress
+      v-if="isLoading"
       class="mt-3"
       :value="progress"
       :max="81 - form.givenDigits"
@@ -71,23 +75,40 @@ export default {
         givenDigits: 17,
       },
       progress: 0,
-      genWorker: new worker(),
+      isLoading: false,
+      genWorker: null,
+      intervalId: undefined,
     };
   },
   props: {},
+  beforeDestroy() {
+    if (this.intervalId) clearInterval(this.intervalId);
+    if (this.genWorker) this.genWorker.terminate();
+  },
   methods: {
     onSubmit(event) {
       event.preventDefault();
     },
     async generate() {
-      let id = setInterval(
-        async () => (this.progress = await this.genWorker.getProgress()),
-        500
-      );
-      this.genWorker.generate(this.form.givenDigits).then((res) => {
-        this.store.sudoku = Sudoku.fromObject(res);
-        clearInterval(id);
-      });
+      if (this.isLoading) {
+        if (this.intervalId) clearInterval(this.intervalId);
+        if (this.genWorker) this.genWorker.terminate();
+        this.isLoading = false;
+      } else {
+        this.isLoading = true;
+        this.genWorker = new worker();
+        this.progress = 0;
+        this.intervalId = setInterval(
+          async () => (this.progress = await this.genWorker.getProgress()),
+          500
+        );
+        this.genWorker.generate(this.form.givenDigits).then((res) => {
+          this.store.sudoku = Sudoku.fromObject(res);
+          clearInterval(this.intervalId);
+          this.intervalId = undefined;
+          this.isLoading = false;
+        });
+      }
     },
   },
 };

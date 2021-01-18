@@ -1,6 +1,6 @@
 <template>
   <div>
-    <b-card :title="this.$route.meta.pageTitle">
+    <b-card :title="this.$route.meta.pageTitle" style="min-width:400px;">
       <div class="panel-content">
       <router-view></router-view>
       </div>

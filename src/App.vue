@@ -2,10 +2,10 @@
   <div id="app">
     <b-container class="h-100">
       <b-row align-v="center">
-        <b-col cols="auto" xl="6"
+        <b-col
           ><sudoku-board :gameObj="store.sudoku" :showInternal="showInternal"
         /></b-col>
-        <b-col cols="12" md="6"><control-panel></control-panel></b-col>
+        <b-col><control-panel></control-panel></b-col>
       </b-row>
     </b-container>
   </div>

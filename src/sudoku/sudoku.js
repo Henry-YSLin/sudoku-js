@@ -879,9 +879,9 @@ export class Generator {
     this.#progress = 0;
     outer: do {
       choices = Positions.of(this.sudoku).containsNumber();
+      let maxChoices = choices.length;
       do {
         if (choices.length === 0) break outer;
-        console.log(`${c}/${count} - ${choices.length}`);
         tmp = new Sudoku(this.sudoku.boardFlat);
         choice = choices[Math.floor(Math.random() * choices.length)];
         choices.splice(choices.indexOf(choice), 1);
@@ -891,11 +891,12 @@ export class Generator {
           solver.step() &&
           tmp.at(choice).number !== this.sudoku.at(choice).number
         );
+        console.log(`${c}/${count} - ${choices.length}`);
+        this.#progress = c + 1 - choices.length / maxChoices;
+        await sleep(0);
       } while (tmp.at(choice).number !== this.sudoku.at(choice).number);
       this.sudoku.at(choice).number = null;
       c++;
-      this.#progress = c;
-      await sleep(0);
     } while (c < count);
     Positions.of(this.sudoku).forEachCell((x) => (x.fixed = x.number !== null));
     return this.sudoku;
