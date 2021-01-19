@@ -1,5 +1,6 @@
 <template>
   <div>
+    <p>More features coming soon!</p>
     <num-pad @numpress="numpress"></num-pad>
   </div>
 </template>
@@ -9,7 +10,7 @@ import NumPad from "../components/NumPad.vue";
 import store from "../store.js";
 
 export default {
-  name: "ManualInput",
+  name: "Play",
   components: { NumPad },
   props: {},
   data() {
@@ -20,10 +21,10 @@ export default {
   methods: {
     numpress(num) {
       this.store.selectedCells.forEach((x) => {
+        if (x.fixed) return;
         x.number = num;
         for (let i = 1; i <= 9; i++)
           x.possibilities[i] = !x.number || i == x.number;
-        x.fixed = !!x.number;
       });
     },
   },

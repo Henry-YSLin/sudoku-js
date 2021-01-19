@@ -1,5 +1,5 @@
 <template>
-  <div id="cell">
+  <div id="cell" class="noselect">
     <div class="corner-mark" v-if="cellObj.number === null">
       <div class="top-left">{{ cornerMarks[0] }}</div>
       <div class="top-middle">{{ cornerMarks[4] }}</div>
@@ -36,17 +36,13 @@ export default {
   },
   computed: {
     cornerMarks() {
+      if (this.cellObj.possibilities.numbers.length === 9) return [];
       let pos = this.sudoku.positionOf(this.cellObj);
       return this.cellObj.possibilities.numbers.filter(
         (x) =>
           Positions.box(pos.box)
             .of(this.sudoku)
-            .filterCells(
-              (y) =>
-                y.possibilities[x] &&
-                y.number === null &&
-                y.possibilities.numbers.length < 9
-            ).length === 2
+            .filterCells((y) => y.possibilities[x] && !y.number).length === 2
       );
     },
   },
@@ -55,6 +51,14 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
+.noselect {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
 #cell {
   width: 50px;
   height: 50px;

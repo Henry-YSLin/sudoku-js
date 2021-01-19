@@ -5,7 +5,6 @@
       <router-view></router-view>
       </div>
       <b-link class="card-link" v-if="this.$route.meta.backAction" @click="goBack()">Back</b-link>
-      <b-link class="card-link" v-if="this.$route.meta.confirmAction" to="/action">OK</b-link>
     </b-card>
   </div>
 </template>

@@ -3,7 +3,12 @@
     <b-container class="h-100">
       <b-row align-v="center">
         <b-col
-          ><sudoku-board :gameObj="store.sudoku" :showInternal="showInternal"
+          ><sudoku-board
+            :gameObj="store.sudoku"
+            :selectedCells="store.selectedCells"
+            :showInternal="showInternal"
+            @select="select"
+            @deselect="deselect"
         /></b-col>
         <b-col><control-panel></control-panel></b-col>
       </b-row>
@@ -66,6 +71,14 @@ export default {
       0,0,0,0,0,0,0,0,9,
       8,0,5,9,0,7,0,4,0,
     ]);
+  },
+  methods: {
+    select(item) {
+      this.store.selectedCells.push(item);
+    },
+    deselect() {
+      this.store.selectedCells = [];
+    },
   },
 };
 </script>

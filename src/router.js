@@ -10,8 +10,7 @@ const router = new VueRouter({
       name: 'home',
       component: () => import('@/pages/Home.vue'),
       meta: {
-        pageTitle: 'Get a Sudoku',
-        confirmAction: false,
+        pageTitle: 'Choose an action',
         backAction: false
       },
     },
@@ -21,7 +20,6 @@ const router = new VueRouter({
       component: () => import('@/pages/ManualInput.vue'),
       meta: {
         pageTitle: 'Manual input',
-        confirmAction: true,
         backAction: true
       },
     },
@@ -31,27 +29,15 @@ const router = new VueRouter({
       component: () => import('@/pages/Generate.vue'),
       meta: {
         pageTitle: 'Generate',
-        confirmAction: true,
         backAction: true
       },
     },
     {
-      path: '/load',
-      name: 'load',
-      component: () => import('@/pages/Load.vue'),
+      path: '/save-load',
+      name: 'save-load',
+      component: () => import('@/pages/SaveLoad.vue'),
       meta: {
-        pageTitle: 'Load',
-        confirmAction: true,
-        backAction: true
-      },
-    },
-    {
-      path: '/action',
-      name: 'action',
-      component: () => import('@/pages/Action.vue'),
-      meta: {
-        pageTitle: 'Choose an action',
-        confirmAction: false,
+        pageTitle: 'Save/Load Code',
         backAction: true
       },
     },
@@ -61,7 +47,24 @@ const router = new VueRouter({
       component: () => import('@/pages/Solve.vue'),
       meta: {
         pageTitle: 'Solve',
-        confirmAction: false,
+        backAction: true
+      },
+    },
+    {
+      path: '/play',
+      name: 'play',
+      component: () => import('@/pages/Play.vue'),
+      meta: {
+        pageTitle: 'Play',
+        backAction: true
+      },
+    },
+    {
+      path: '/analyze',
+      name: 'analyze',
+      component: () => import('@/pages/Analyze.vue'),
+      meta: {
+        pageTitle: 'Analyze',
         backAction: true
       },
     },

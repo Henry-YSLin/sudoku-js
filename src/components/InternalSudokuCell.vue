@@ -1,5 +1,5 @@
 <template>
-  <div id="cell">
+  <div id="cell" class="noselect">
     <pre class="possibilities">{{
       [1, 2, 3, 4, 5, 6, 7, 8, 9].reduce(
         (sum, x) => (sum += cellObj.possibilities[x] ? x : " "),
@@ -23,6 +23,14 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
+.noselect {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
 #cell {
   width: 50px;
   height: 50px;

@@ -2,9 +2,27 @@
   <div>
     <table border="1" cellspacing="0">
       <tr v-for="row in gameObj.board" :key="row[0].id">
-        <td v-for="item in row" :key="item.id" class="sudoku-cell">
-          <sudoku-cell :cellObj="item" :sudoku="gameObj" v-if="!showInternal" />
-          <internal-sudoku-cell :cellObj="item" v-if="showInternal" />
+        <td
+          v-for="item in row"
+          :key="item.id"
+          class="sudoku-cell"
+          :class="selectedCells.includes(item) ? 'selected-cell' : null"
+        >
+          <sudoku-cell
+            :cellObj="item"
+            :sudoku="gameObj"
+            v-if="!showInternal"
+            @mousedown.native="(e) => mousedown(e, item)"
+            @click.native="(e) => click(e, item)"
+            @mouseover.native="(e) => mouseover(e, item)"
+          />
+          <internal-sudoku-cell
+            :cellObj="item"
+            v-if="showInternal"
+            @mousedown.native="(e) => mousedown(e, item)"
+            @click.native="(e) => click(e, item)"
+            @mouseover.native="(e) => mouseover(e, item)"
+          />
         </td>
       </tr>
     </table>
@@ -20,7 +38,6 @@
 <script>
 import SudokuCell from "./SudokuCell.vue";
 import InternalSudokuCell from "./InternalSudokuCell.vue";
-import store from "../store.js";
 
 export default {
   name: "SudokuBoard",
@@ -30,31 +47,35 @@ export default {
   },
   props: {
     gameObj: Object,
+    selectedCells: Array,
   },
   data() {
     return {
-      store,
       showInternal: false,
     };
+  },
+  methods: {
+    mousedown(e, item) {
+      if (!e.ctrlKey) this.$emit("deselect");
+      this.$emit("select", item);
+    },
+    click(e, item) {
+      if (!e.ctrlKey) this.$emit("deselect");
+      this.$emit("select", item);
+    },
+    mouseover(e, item) {
+      if (e.buttons === 1) {
+        if (!this.selectedCells.includes(item)) this.$emit("select", item);
+      }
+    },
   },
 };
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-h3 {
-  margin: 40px 0 0;
-}
-ul {
-  list-style-type: none;
-  padding: 0;
-}
-li {
-  display: inline-block;
-  margin: 0 10px;
-}
-a {
-  color: #42b983;
+.selected-cell {
+  background-color: burlywood;
 }
 .sudoku-cell {
   text-align: center;

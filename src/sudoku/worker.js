@@ -8,7 +8,7 @@ export function getProgress() {
 
 export async function generate(givenDigits, enabledTechniques) {
   let solver = new Solver();
-  solver.EnabledTechniques = enabledTechniques;
+  if (enabledTechniques) solver.EnabledTechniques = enabledTechniques;
   generator = new Generator(solver);
   generator.fillGrid();
   await generator.maskGrid(81 - givenDigits);
@@ -17,7 +17,7 @@ export async function generate(givenDigits, enabledTechniques) {
 
 export function solve(sudoku, enabledTechniques) {
   let solver = new Solver();
-  solver.EnabledTechniques = enabledTechniques;
+  if (enabledTechniques) solver.EnabledTechniques = enabledTechniques;
   solver.setup(Sudoku.fromObject(sudoku));
   let res = solver.solve();
   return { result: res, sudoku: solver.sudoku };
@@ -25,7 +25,7 @@ export function solve(sudoku, enabledTechniques) {
 
 export function step(sudoku, enabledTechniques) {
   let solver = new Solver();
-  solver.EnabledTechniques = enabledTechniques;
+  if (enabledTechniques) solver.EnabledTechniques = enabledTechniques;
   solver.setup(Sudoku.fromObject(sudoku));
   let res = solver.step();
   return { result: res, sudoku: solver.sudoku };

@@ -50,9 +50,6 @@
       show-progress
       animated
     ></b-progress>
-    <b-card class="mt-3" header="Form Data Result (Debug)">
-      <pre class="m-0">{{ { solver, givenDigits } }}</pre>
-    </b-card>
   </div>
 </template>
 
