@@ -10,13 +10,9 @@
     </table>
 
     <div class="mt-4">
-      <b-form-checkbox
-        id="showInternalCheckbox"
-        v-model="showInternal"
+      <b-form-checkbox id="showInternalCheckbox" v-model="showInternal"
         >Show all possibilities</b-form-checkbox
       >
-      <b-button @click="step()" class="m-1">Step</b-button>
-      <b-button @click="solve()" class="m-1">Solve</b-button>
     </div>
   </div>
 </template>
@@ -25,8 +21,6 @@
 import SudokuCell from "./SudokuCell.vue";
 import InternalSudokuCell from "./InternalSudokuCell.vue";
 import store from "../store.js";
-import { Sudoku, Solver } from "../sudoku/sudoku.js";
-import worker from "workerize-loader!../sudoku/worker.js";
 
 export default {
   name: "SudokuBoard",
@@ -41,19 +35,7 @@ export default {
     return {
       store,
       showInternal: false,
-      solveWorker: new worker(),
     };
-  },
-  methods: {
-    step() {
-      let solver = new Solver(this.store.sudoku);
-      solver.step();
-    },
-    solve() {
-      this.solveWorker.solve(this.store.sudoku).then((res) => {
-        this.store.sudoku = Sudoku.fromObject(res);
-      });
-    },
   },
 };
 </script>

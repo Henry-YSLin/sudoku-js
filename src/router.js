@@ -44,7 +44,27 @@ const router = new VueRouter({
         confirmAction: true,
         backAction: true
       },
-    }
+    },
+    {
+      path: '/action',
+      name: 'action',
+      component: () => import('@/pages/Action.vue'),
+      meta: {
+        pageTitle: 'Choose an action',
+        confirmAction: false,
+        backAction: true
+      },
+    },
+    {
+      path: '/solve',
+      name: 'solve',
+      component: () => import('@/pages/Solve.vue'),
+      meta: {
+        pageTitle: 'Solve',
+        confirmAction: false,
+        backAction: true
+      },
+    },
   ]
 })
 

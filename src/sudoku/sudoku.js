@@ -1,9 +1,9 @@
 /**
  * TODO:
- * - Swordfish Analysis
- * - Analysis steps output
+ * - Swordfish Technique
+ * - Technique steps output
  * - Generator
- * - Toggleable Analysis
+ * - Toggleable Technique
  */
 
 export class Sudoku {
@@ -492,12 +492,15 @@ class ChangeTracker {
 }
 
 export class Solver {
-  constructor(sudoku) {
-    this.sudoku = sudoku;
+  #techniqueCache;
+  constructor() {
+    this.sudoku = null;
+    this.EnabledTechniques = this.Techniques.map((x) => x.id);
+    this.#techniqueCache = [...this.Techniques];
   }
 
   // fill in the number for naked singles
-  nakedSingleAnalysis() {
+  nakedSingleTechnique() {
     let tracker = new ChangeTracker();
     Positions.of(this.sudoku)
       .empty()
@@ -507,7 +510,7 @@ export class Solver {
   }
 
   // fill in a number if it can only go in one place
-  singleLocationAnalysis() {
+  singleCandidateTechnique() {
     let tracker = new ChangeTracker();
     for (let i = 1; i <= 9; i++) {
       for (let j = 1; j <= 9; j++) {
@@ -516,6 +519,8 @@ export class Solver {
             choices = choices.containsPossibilities(j);
             if (choices.length === 1) {
               choices.setNumber(j, tracker);
+              choices.setPossibilities(Sudoku.allNumbers(), false);
+              choices.forEachCell((x) => (x.possibilities[x.number] = true));
             }
           }
         };
@@ -528,7 +533,7 @@ export class Solver {
   }
 
   // if a cell is filled, there are no other possibilities
-  filledCellsAnalysis() {
+  filledCellsTechnique() {
     let changed = false;
     Positions.of(this.sudoku)
       .containsNumber()
@@ -542,7 +547,7 @@ export class Solver {
   }
 
   // remove possibilities from cells seen by a number
-  seenNumbersAnalysis() {
+  directEliminationTechnique() {
     let tracker = new ChangeTracker();
     for (let i = 1; i <= 9; i++) {
       // for each number
@@ -555,7 +560,7 @@ export class Solver {
   }
 
   // remove all other possibilities from cells when they form a pair
-  pairAnalysis() {
+  pairsTechnique() {
     let tracker = new ChangeTracker();
     for (let i = 1; i <= 9; i++) {
       // for each box
@@ -595,7 +600,7 @@ export class Solver {
   }
 
   // remove all other possibilities from cells when they form a triple
-  tripleAnalysis() {
+  triplesTechnique() {
     let tracker = new ChangeTracker();
     for (let i = 1; i <= 9; i++) {
       // for each box
@@ -655,7 +660,7 @@ export class Solver {
 
   // remove possibilities from rows and columns
   // when a number is sure to be in a particular box
-  cornerMarkAnalysis() {
+  pencilMarkEliminationTechnique() {
     let tracker = new ChangeTracker();
     for (let i = 1; i <= 9; i++) {
       // for each box
@@ -689,7 +694,7 @@ export class Solver {
   }
 
   // remove possibilities with X Wing logic on rows
-  rowXWingAnalysis() {
+  rowXWingTechnique() {
     let tracker = new ChangeTracker();
     for (let i = 1; i <= 9; i++) {
       // for each number
@@ -743,7 +748,7 @@ export class Solver {
   }
 
   // remove possibilities with X Wing logic on columns
-  columnXWingAnalysis() {
+  columnXWingTechnique() {
     let tracker = new ChangeTracker();
     for (let i = 1; i <= 9; i++) {
       // for each number
@@ -796,46 +801,80 @@ export class Solver {
     return tracker.changed;
   }
 
-  Analyses = [
-    this.nakedSingleAnalysis,
-    this.singleLocationAnalysis,
-    this.filledCellsAnalysis,
-    this.seenNumbersAnalysis,
-    this.cornerMarkAnalysis,
-    this.pairAnalysis,
-    this.tripleAnalysis,
-    this.rowXWingAnalysis,
-    this.columnXWingAnalysis,
-  ];
+  #techniques = Object.freeze([
+    {
+      name: "Direct Elimination",
+      id: "direct-elimination",
+      actions: [this.directEliminationTechnique],
+    },
+    {
+      name: "Single Candidate",
+      id: "single-candidate",
+      actions: [this.singleCandidateTechnique],
+    },
+    {
+      name: "Eliminate by Pencil Mark",
+      id: "pencil-mark-elimination",
+      actions: [this.pencilMarkEliminationTechnique],
+    },
+    { name: "Pairs", id: "pairs", actions: [this.pairsTechnique] },
+    { name: "Triples", id: "triples", actions: [this.triplesTechnique] },
+    {
+      name: "X Wing",
+      id: "x-wing",
+      actions: [this.rowXWingTechnique, this.columnXWingTechnique],
+    },
+  ]);
+
+  get Techniques() {
+    return this.#techniques;
+  }
+
+  setup(sudoku) {
+    this.sudoku = sudoku;
+    this.filledCellsTechnique();
+    this.#techniqueCache = this.Techniques.filter((x) =>
+      this.EnabledTechniques.includes(x.id)
+    );
+  }
 
   step() {
-    for (let i = 0; i < this.Analyses.length; i++) {
-      if (this.Analyses[i].call(this)) {
-        console.log("Analysis used: " + i);
-        return true;
+    for (let i = 0; i < this.#techniqueCache.length; i++) {
+      let technique = this.#techniqueCache[i];
+      let ref = this;
+      if (
+        technique.actions.reduce(
+          (changed, x) => (changed = x.call(ref) || changed),
+          false
+        )
+      ) {
+        this.nakedSingleTechnique();
+        return { changed: true, technique: technique.id };
       }
     }
-    return false;
+    return { changed: false };
   }
 
   solve() {
-    let steps = 0;
+    let steps = [];
+    let res;
     do {
-      steps++;
-    } while (this.step());
-    console.log("Steps used: " + steps);
+      res = this.step();
+      steps.push(res.technique);
+    } while (res.changed);
+    return steps;
   }
 }
 
 function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
-
 
 export class Generator {
   #progress;
-  constructor() {
+  constructor(solver) {
     this.sudoku = new Sudoku();
+    this.solver = solver ?? new Solver();
     this.#progress = 0;
   }
 
@@ -886,12 +925,11 @@ export class Generator {
         choice = choices[Math.floor(Math.random() * choices.length)];
         choices.splice(choices.indexOf(choice), 1);
         tmp.at(choice).number = null;
-        let solver = new Solver(tmp);
+        this.solver.setup(tmp);
         while (
-          solver.step() &&
+          this.solver.step().changed &&
           tmp.at(choice).number !== this.sudoku.at(choice).number
         );
-        console.log(`${c}/${count} - ${choices.length}`);
         this.#progress = c + 1 - choices.length / maxChoices;
         await sleep(0);
       } while (tmp.at(choice).number !== this.sudoku.at(choice).number);

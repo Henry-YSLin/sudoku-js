@@ -3,22 +3,20 @@
     <b-form @submit="onSubmit">
       <b-form-group
         id="input-group-1"
-        label="Analyses:"
+        label="Techniques:"
         v-slot="{ ariaDescribedby }"
       >
         <b-form-checkbox-group
-          v-model="form.analyses"
+          v-model="solver.EnabledTechniques"
           id="checkboxes-1"
           :aria-describedby="ariaDescribedby"
         >
-          <b-form-checkbox value="DirectElimination"
-            >Direct elimination</b-form-checkbox
+          <b-form-checkbox
+            :value="item.id"
+            v-for="item in solver.Techniques"
+            :key="item.id"
+            >{{ item.name }}</b-form-checkbox
           >
-          <b-form-checkbox value="NakedSingle">Naked single</b-form-checkbox>
-          <b-form-checkbox value="Pairs">Pairs</b-form-checkbox>
-          <b-form-checkbox value="Triples">Triples</b-form-checkbox>
-          <b-form-checkbox value="XWing">X Wing</b-form-checkbox>
-          <b-form-checkbox value="Swordfish">Swordfish</b-form-checkbox>
         </b-form-checkbox-group>
       </b-form-group>
 
@@ -30,9 +28,9 @@
         <b-form-input
           id="input-2"
           type="number"
-          max="81"
+          max="80"
           min="17"
-          v-model="form.givenDigits"
+          v-model="givenDigits"
           placeholder="Enter a number"
           required
         ></b-form-input>
@@ -41,7 +39,6 @@
       <b-button
         type="submit"
         :variant="isLoading ? 'danger' : 'primary'"
-        @click="generate()"
         >{{ isLoading ? "Cancel" : "Generate" }}</b-button
       >
     </b-form>
@@ -49,19 +46,19 @@
       v-if="isLoading"
       class="mt-3"
       :value="progress"
-      :max="81 - form.givenDigits"
+      :max="81 - givenDigits"
       show-progress
       animated
     ></b-progress>
     <b-card class="mt-3" header="Form Data Result (Debug)">
-      <pre class="m-0">{{ form }}</pre>
+      <pre class="m-0">{{ { solver, givenDigits } }}</pre>
     </b-card>
   </div>
 </template>
 
 <script>
 import worker from "workerize-loader!../sudoku/worker.js";
-import { Sudoku } from "../sudoku/sudoku.js";
+import { Sudoku, Solver } from "../sudoku/sudoku.js";
 import store from "../store.js";
 
 export default {
@@ -70,14 +67,12 @@ export default {
   data() {
     return {
       store,
-      form: {
-        analyses: [],
-        givenDigits: 17,
-      },
+      givenDigits: 17,
       progress: 0,
       isLoading: false,
       genWorker: null,
       intervalId: undefined,
+      solver: new Solver(),
     };
   },
   props: {},
@@ -88,6 +83,7 @@ export default {
   methods: {
     onSubmit(event) {
       event.preventDefault();
+      this.generate();
     },
     async generate() {
       if (this.isLoading) {
@@ -102,12 +98,14 @@ export default {
           async () => (this.progress = await this.genWorker.getProgress()),
           500
         );
-        this.genWorker.generate(this.form.givenDigits).then((res) => {
-          this.store.sudoku = Sudoku.fromObject(res);
-          clearInterval(this.intervalId);
-          this.intervalId = undefined;
-          this.isLoading = false;
-        });
+        this.genWorker
+          .generate(this.givenDigits, this.solver.EnabledTechniques)
+          .then((res) => {
+            this.store.sudoku = Sudoku.fromObject(res);
+            clearInterval(this.intervalId);
+            this.intervalId = undefined;
+            this.isLoading = false;
+          });
       }
     },
   },
