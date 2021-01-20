@@ -1,5 +1,5 @@
 <template>
-  <div id="cell" class="noselect">
+  <div class="cell noselect">
     <pre class="possibilities">{{
       [1, 2, 3, 4, 5, 6, 7, 8, 9].reduce(
         (sum, x) => (sum += cellObj.possibilities[x] ? x : " "),
@@ -31,7 +31,7 @@ export default {
   -ms-user-select: none;
   user-select: none;
 }
-#cell {
+.cell {
   width: 50px;
   height: 50px;
   position: relative;

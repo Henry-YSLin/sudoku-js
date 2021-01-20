@@ -1,7 +1,7 @@
 <template>
   <div id="app">
     <b-container class="h-100">
-      <b-row align-v="center">
+      <b-row align-v="center" class="h-100">
         <b-col
           ><sudoku-board
             :gameObj="store.sudoku"
@@ -10,7 +10,9 @@
             @select="select"
             @deselect="deselect"
         /></b-col>
-        <b-col><control-panel></control-panel></b-col>
+        <b-col class="mh-100 overflow-auto"
+          ><control-panel ref="controlPanel" class="my-4"></control-panel
+        ></b-col>
       </b-row>
     </b-container>
   </div>
@@ -21,6 +23,7 @@ import SudokuBoard from "./components/SudokuBoard.vue";
 import ControlPanel from "./layouts/ControlPanel.vue";
 import store from "./store.js";
 import { Sudoku } from "./sudoku/sudoku.js";
+import { disableBodyScroll, clearAllBodyScrollLocks } from "body-scroll-lock";
 
 export default {
   name: "App",
@@ -59,6 +62,7 @@ export default {
     //   0,0,0,0,0,0,0,0,9,
     //   8,0,5,9,0,7,0,4,0,
     // ]);
+
     // prettier-ignore
     this.store.sudoku = new Sudoku([
       6,0,9,1,0,2,0,8,0,
@@ -71,6 +75,12 @@ export default {
       0,0,0,0,0,0,0,0,9,
       8,0,5,9,0,7,0,4,0,
     ]);
+  },
+  mounted() {
+    disableBodyScroll(this.$refs["controlPanel"].$el);
+  },
+  beforeDestroy() {
+    clearAllBodyScrollLocks();
   },
   methods: {
     select(item) {
@@ -90,6 +100,7 @@ export default {
   -moz-osx-font-smoothing: grayscale;
   text-align: left;
   color: #2c3e50;
-  margin-top: 60px;
+  height: 100vh;
+  width: 100%;
 }
 </style>

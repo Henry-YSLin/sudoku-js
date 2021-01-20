@@ -1,6 +1,13 @@
 <template>
   <div>
-    <table border="1" cellspacing="0">
+    <table
+      border="1"
+      cellspacing="0"
+      @touchstart="touchstart"
+      @touchmove="touchmove"
+      @touchend="touchend"
+      @touchcancel="touchcancel"
+    >
       <tr v-for="row in gameObj.board" :key="row[0].id">
         <td
           v-for="item in row"
@@ -52,9 +59,99 @@ export default {
   data() {
     return {
       showInternal: false,
+      ongoingTouches: [],
     };
   },
   methods: {
+    copyTouch(touch) {
+      return {
+        identifier: touch.identifier,
+        screenX: touch.screenX,
+        screenY: touch.screenY,
+        clientX: touch.clientX,
+        clientY: touch.clientY,
+        pageX: touch.pageX,
+        pageY: touch.pageY,
+        target: touch.target,
+        radiusX: touch.radiusX,
+        radiusY: touch.radiusY,
+        rotationAngle: touch.rotationAngle,
+        force: touch.force,
+      };
+    },
+    touchstart(e) {
+      e.preventDefault();
+      if (this.ongoingTouches.length === 0 && !e.ctrlKey)
+        this.$emit("deselect");
+      var touches = e.changedTouches;
+
+      for (var i = 0; i < touches.length; i++) {
+        this.ongoingTouches.push(this.copyTouch(touches[i]));
+        let elm = document.elementFromPoint(
+          touches[i].clientX,
+          touches[i].clientY
+        );
+        let inst = elm.__vue__;
+        if (!inst) inst = elm.closest(".sudoku-cell > .cell")?.__vue__;
+        if (!inst) continue;
+        let item = inst.cellObj;
+        if (!!item && !this.selectedCells.includes(item))
+          this.$emit("select", item);
+      }
+    },
+    touchmove(e) {
+      e.preventDefault();
+      var touches = e.changedTouches;
+
+      for (var i = 0; i < touches.length; i++) {
+        var idx = this.ongoingTouches.findIndex(
+          (x) => x.identifier === touches[i].identifier
+        );
+
+        if (idx >= 0) {
+          this.ongoingTouches.splice(idx, 1, this.copyTouch(touches[i]));
+          let elm = document.elementFromPoint(
+            this.ongoingTouches[idx].clientX,
+            this.ongoingTouches[idx].clientY
+          );
+          let inst = elm.__vue__;
+          if (!inst) inst = elm.closest(".sudoku-cell > .cell")?.__vue__;
+          if (!inst) continue;
+          let item = inst.cellObj;
+          if (!!item && !this.selectedCells.includes(item))
+            this.$emit("select", item);
+        } else {
+          console.log("can't figure out which touch to continue");
+        }
+      }
+    },
+    touchend(e) {
+      e.preventDefault();
+      var touches = e.changedTouches;
+
+      for (var i = 0; i < touches.length; i++) {
+        var idx = this.ongoingTouches.findIndex(
+          (x) => x.identifier === touches[i].identifier
+        );
+
+        if (idx >= 0) {
+          this.ongoingTouches.splice(idx, 1);
+        } else {
+          console.log("can't figure out which touch to end");
+        }
+      }
+    },
+    touchcancel(e) {
+      e.preventDefault();
+      var touches = e.changedTouches;
+
+      for (var i = 0; i < touches.length; i++) {
+        var idx = this.ongoingTouches.findIndex(
+          (x) => x.identifier === touches[i].identifier
+        );
+        this.ongoingTouches.splice(idx, 1);
+      }
+    },
     mousedown(e, item) {
       if (!e.ctrlKey) this.$emit("deselect");
       this.$emit("select", item);

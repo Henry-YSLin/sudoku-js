@@ -1,5 +1,5 @@
 <template>
-  <div id="cell" class="noselect">
+  <div class="cell noselect">
     <div class="corner-mark" v-if="cellObj.number === null">
       <div class="top-left">{{ cornerMarks[0] }}</div>
       <div class="top-middle">{{ cornerMarks[4] }}</div>
@@ -59,7 +59,7 @@ export default {
   -ms-user-select: none;
   user-select: none;
 }
-#cell {
+.cell {
   width: 50px;
   height: 50px;
   position: relative;

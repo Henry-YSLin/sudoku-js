@@ -972,8 +972,7 @@ export class Solver {
     let res;
     do {
       res = this.step();
-      if (res.changed)
-      steps.push(res.technique);
+      if (res.changed) steps.push(res.technique);
     } while (res.changed);
     return steps;
   }
