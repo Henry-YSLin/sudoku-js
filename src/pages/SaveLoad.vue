@@ -89,21 +89,21 @@ export default {
       this.ctcEnabled = false;
       this.store.selectedCells = [];
       fetch(
-        "https://api.allorigins.win/get?url=" +
-          encodeURIComponent(
-            "https://app.crackingthecryptic.com/api/puzzle/" + this.puzzleId
-          )
+        "https://cors-anywhere.herokuapp.com/" +
+          "https://app.crackingthecryptic.com/api/puzzle/" +
+          this.puzzleId
       )
-        .then((response) => response.json())
+        .then((response) => response.text())
         .then((data) => {
-          let s = data.contents;
+          let s = data;
           s = s.replace(/(?<=\[|,)(?=,|\])/g, "null");
           let obj = jsonic(s);
           this.store.sudoku = new Sudoku(obj.ce.flat().map((x) => x?.v));
           this.showFailed = false;
           this.ctcEnabled = true;
         })
-        .catch(() => {
+        .catch((e) => {
+          console.log(e);
           this.showFailed = true;
           this.ctcEnabled = true;
         });
