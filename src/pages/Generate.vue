@@ -38,9 +38,18 @@
 
       <b-button
         type="submit"
+        id="generate"
         :variant="isLoading ? 'danger' : 'primary'"
         >{{ isLoading ? "Cancel" : "Generate" }}</b-button
       >
+
+      <b-popover
+        :show="showMsg"
+        disabled
+        target="generate"
+        title="Generation finished!"
+        ref="popover"
+      ></b-popover>
     </b-form>
     <b-progress
       v-if="isLoading"
@@ -70,6 +79,7 @@ export default {
       genWorker: null,
       intervalId: undefined,
       solver: new Solver(),
+      showMsg: false,
     };
   },
   props: {},
@@ -83,6 +93,7 @@ export default {
       this.generate();
     },
     async generate() {
+      this.showMsg = false;
       if (this.isLoading) {
         if (this.intervalId) clearInterval(this.intervalId);
         if (this.genWorker) this.genWorker.terminate();
@@ -102,6 +113,7 @@ export default {
             clearInterval(this.intervalId);
             this.intervalId = undefined;
             this.isLoading = false;
+            this.showMsg = true;
           });
       }
     },

@@ -22,7 +22,7 @@
 
       <b-button
         class="m-1"
-        :disabled="isSolveLoading"
+        :disabled="isSolveLoading || isInvalid"
         :variant="isStepLoading ? 'danger' : 'primary'"
         @click="step()"
         >{{ isStepLoading ? "Cancel" : "Step" }}</b-button
@@ -30,13 +30,23 @@
       <b-button
         class="m-1"
         type="submit"
-        :disabled="isStepLoading"
+        id="solve"
+        :disabled="isStepLoading || isInvalid"
         :variant="isSolveLoading ? 'danger' : 'primary'"
         >{{ isSolveLoading ? "Cancel" : "Solve" }}</b-button
       >
+      <b-popover
+        :show="isInvalid"
+        disabled
+        target="solve"
+        title="Invalid sudoku!"
+        ref="popover"
+      ></b-popover>
     </b-form>
     <b-card class="mt-3" header="Action Details">
-      <pre class="m-0">{{ result }}</pre>
+      <div class="m-0 text-monospace" style="white-space: pre-line">
+        {{ actionDetails }}
+      </div>
     </b-card>
   </div>
 </template>
@@ -57,11 +67,36 @@ export default {
       solveWorker: null,
       solver: new Solver(),
       result: null,
+      isInvalid: false,
     };
   },
   props: {},
   beforeDestroy() {
     if (this.solveWorker) this.solveWorker.terminate();
+  },
+  created() {
+    this.isInvalid = !this.store.sudoku.verify();
+  },
+  computed: {
+    actionDetails() {
+      if (this.result?.message) {
+        return this.result.message;
+      } else if (this.result instanceof Array) {
+        if (this.result.length === 0) return "Nothing is done";
+        return this.result
+          .map(
+            (itm, idx) =>
+              idx + 1 + ". " + this.solver.getTechniqueById(itm).name
+          )
+          .reduce((acc, cur) => acc + "\n" + cur, "")
+          .substring(1);
+      } else {
+        return this.result?.changed
+          ? "Technique used: " +
+              this.solver.getTechniqueById(this.result.technique).name
+          : "Nothing is done";
+      }
+    },
   },
   methods: {
     onSubmit(event) {
@@ -69,6 +104,7 @@ export default {
       this.solve();
     },
     async step() {
+      if (this.isInvalid) return;
       if (this.isSolveLoading) return;
       if (this.isStepLoading) {
         if (this.solveWorker) this.solveWorker.terminate();
@@ -80,13 +116,26 @@ export default {
         this.solveWorker
           .step(this.store.sudoku, this.solver.EnabledTechniques)
           .then((res) => {
-            this.store.sudoku = Sudoku.fromObject(res.sudoku);
-            this.result = res.result;
+            this.isInvalid = !this.store.sudoku.verify();
+            return res;
+          })
+          .then((res) => {
+            let sudoku = Sudoku.fromObject(res.sudoku);
+            this.isInvalid = !sudoku.verify();
+            if (this.isInvalid) {
+              this.result = {
+                message: "Solver discovered that this sudoku has no solution",
+              };
+            } else {
+              this.result = res.result;
+              this.store.sudoku = sudoku;
+            }
             this.isStepLoading = false;
           });
       }
     },
     async solve() {
+      if (this.isInvalid) return;
       if (this.isStepLoading) return;
       if (this.isSolveLoading) {
         if (this.solveWorker) this.solveWorker.terminate();
@@ -98,8 +147,16 @@ export default {
         this.solveWorker
           .solve(this.store.sudoku, this.solver.EnabledTechniques)
           .then((res) => {
-            this.store.sudoku = Sudoku.fromObject(res.sudoku);
-            this.result = res.result;
+            let sudoku = Sudoku.fromObject(res.sudoku);
+            this.isInvalid = !sudoku.verify();
+            if (this.isInvalid) {
+              this.result = {
+                message: "Solver discovered that this sudoku has no solution",
+              };
+            } else {
+              this.result = res.result;
+              this.store.sudoku = sudoku;
+            }
             this.isSolveLoading = false;
           });
       }

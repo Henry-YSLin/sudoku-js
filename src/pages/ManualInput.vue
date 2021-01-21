@@ -1,6 +1,18 @@
 <template>
   <div>
-    <num-pad @numpress="numpress"></num-pad>
+    <b-container class="m-0 p-0">
+      <b-row no-gutters>
+        <b-col>
+          <num-pad @numpress="numpress"></num-pad>
+        </b-col>
+        <b-col>
+          <ul class="m-0 p-0">
+            <li>Click/tap to select a cell</li>
+            <li>Click/tap and hold to select multiple cells</li>
+          </ul>
+        </b-col>
+      </b-row>
+    </b-container>
   </div>
 </template>
 

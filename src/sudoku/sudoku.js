@@ -1,9 +1,7 @@
-/**
- * TODO:
- * - Swordfish Technique
- * - Technique steps output
- * - Generator
- * - Toggleable Technique
+/*
+  TODO:
+    finish Analyze and Play UI
+    add more solving techniques
  */
 
 /**
@@ -95,7 +93,7 @@ function convertBase(str, fromBase, toBase) {
 
 function decToHex(decStr) {
   var hex = convertBase(decStr, 10, 16);
-  return hex ? "0x" + hex : null;
+  return hex;
 }
 
 function hexToDec(hexStr) {
@@ -138,16 +136,33 @@ export class Sudoku {
   }
 
   getCode() {
-    return decToHex(this.boardFlat.reduce((str, num) => (str += num ?? 0), ""));
+    return decToHex(
+      this.board
+        .map((x) => x.map((y) => (y.fixed ? y.number : null)))
+        .flat()
+        .reduce((str, num) => (str += num ?? 0), "")
+    );
   }
 
   static loadCode(code) {
-    let dec = hexToDec(code);
+    let dec = hexToDec(code).padStart(81, "0");
     let arr = [];
     for (let i = 0; i < dec.length; i++) {
       arr.push(parseInt(dec.charAt(i)));
     }
     return new Sudoku(arr);
+  }
+
+  verify() {
+    let sudoku = this;
+    return !Positions.of(this).some(
+      (pos) =>
+        sudoku.at(pos).possibilities.numbers.length === 0 ||
+        (!!sudoku.at(pos).number &&
+          Positions.seenBy(pos)
+            .of(sudoku)
+            .containsNumber(sudoku.at(pos).number).length > 0)
+    );
   }
 
   constructor(board) {
@@ -162,7 +177,7 @@ export class Sudoku {
         this.board[i][j] = new Cell(i + "" + j);
         if (board) {
           let num = board[i * 9 + j];
-          if (num === 0 || num === null) {
+          if (!num) {
             this.board[i][j].number = null;
           } else {
             this.board[i][j].number = num;
@@ -940,6 +955,10 @@ export class Solver {
 
   get Techniques() {
     return this.#techniques;
+  }
+
+  getTechniqueById(id) {
+    return this.Techniques.find((x) => x.id === id);
   }
 
   setup(sudoku) {

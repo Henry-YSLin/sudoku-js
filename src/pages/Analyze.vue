@@ -10,11 +10,20 @@
       >
     </b-list-group>
     <b-button
+      id="analyze"
       class="m-1 mt-3"
       @click="btnClick"
+      :disabled="isInvalid"
       :variant="isSolveLoading ? 'danger' : 'primary'"
       >{{ isSolveLoading ? "Cancel" : "Analyze" }}</b-button
     >
+    <b-popover
+      :show="isInvalid"
+      disabled
+      target="analyze"
+      title="Invalid sudoku!"
+      ref="popover"
+    ></b-popover>
     <b-card class="mt-3" header="Action Details">
       <pre class="m-0">{{ result }}</pre>
     </b-card>
@@ -36,7 +45,11 @@ export default {
       solveWorker: null,
       result: null,
       solver: new Solver(),
+      isInvalid: false,
     };
+  },
+  created() {
+    this.isInvalid = !this.store.sudoku.verify();
   },
   props: {},
   beforeDestroy() {

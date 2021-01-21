@@ -1,6 +1,10 @@
 <template>
   <div class="cell noselect">
-    <div class="corner-mark" v-if="cellObj.number === null">
+    <div
+      class="corner-mark"
+      v-if="cellObj.number === null"
+      :class="cellObj.fixed ? 'fixed-number' : null"
+    >
       <div class="top-left">{{ cornerMarks[0] }}</div>
       <div class="top-middle">{{ cornerMarks[4] }}</div>
       <div class="top-right">{{ cornerMarks[1] }}</div>
@@ -13,6 +17,7 @@
     </div>
     <div
       class="center-mark"
+      :class="cellObj.fixed ? 'fixed-number' : null"
       v-if="
         cellObj.number === null && cellObj.possibilities.numbers.length <= 3
       "
@@ -69,7 +74,11 @@ export default {
   margin-top: 0px;
   font-family: Consolas, monospace;
 }
+.corner-mark {
+  color: blue;
+}
 .center-mark {
+  color: blue;
   font-size: 1em;
   position: absolute;
   top: 0px;

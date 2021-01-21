@@ -1,6 +1,6 @@
 <template>
   <div class="cell noselect">
-    <pre class="possibilities">{{
+    <pre class="possibilities" :class="cellObj.fixed ? 'fixed-number' : null">{{
       [1, 2, 3, 4, 5, 6, 7, 8, 9].reduce(
         (sum, x) => (sum += cellObj.possibilities[x] ? x : " "),
         ""
@@ -32,6 +32,7 @@ export default {
   user-select: none;
 }
 .cell {
+  color: blue;
   width: 50px;
   height: 50px;
   position: relative;
@@ -39,10 +40,10 @@ export default {
 .possibilities {
   font-size: 0.5em;
   margin-top: 0px;
+  color: blue;
   font-family: Consolas, monospace;
 }
 .big-number {
-  color: blue;
   font-size: 2em;
   position: absolute;
   top: 0px;
